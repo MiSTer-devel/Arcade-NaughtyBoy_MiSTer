@@ -74,7 +74,7 @@ end process;
 -- Misc
 sel_scrl_addr <= hcnt_i(8);
 
-hsync <= '0' when (hcnt_i > 192) and (hcnt_i < 220) else '1';
+hsync <= '0' when (hcnt_i > (192-16)) and (hcnt_i < (220-16)) else '1';
 vsync <= '0' when (vcnt_i > 232) and (vcnt_i < 240) else '1';
 
 hblank <= '1' when (hcnt_i > (128+15)) and (hcnt_i < (255-15)) else '0';

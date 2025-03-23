@@ -332,7 +332,7 @@ wire flip = 0;
 wire video_rotated;
 screen_rotate screen_rotate (.*);
 
-arcade_video#(256,6) arcade_video
+arcade_video#(288,6) arcade_video
 (
 	.*,
 
