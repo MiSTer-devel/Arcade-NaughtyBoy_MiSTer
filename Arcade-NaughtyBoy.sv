@@ -400,7 +400,7 @@ naughty_boy naughty_boy
 	.video_vblank(vblank),
 
 //	.audio_select(0),
-//	.audio(audio),
+	.audio(audio),
 
 	.dip_switch(dip_switch),
 	.flip_screen(status[15]),

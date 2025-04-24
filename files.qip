@@ -11,6 +11,7 @@ set_global_assignment -name VHDL_FILE rtl/cpu/T80.vhd
 set_global_assignment -name SOURCE_FILE rtl/gen_ram.vhd
 set_global_assignment -name SOURCE_FILE rtl/naughty_boy.vhd
 set_global_assignment -name SOURCE_FILE rtl/naughty_boy_video.vhd
+set_global_assignment -name SOURCE_FILE rtl/tms3615.vhd
 set_global_assignment -name SOURCE_FILE rtl/prom_palette_1.vhd
 set_global_assignment -name SOURCE_FILE rtl/prom_palette_2.vhd
 set_global_assignment -name SYSTEMVERILOG_FILE "rtl/hiscore.v"

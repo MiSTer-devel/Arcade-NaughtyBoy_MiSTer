@@ -33,9 +33,9 @@ port(
  video_vs     : out std_logic;
  video_hblank : out std_logic;
  video_vblank : out std_logic; 
- ce_pix       : inout std_logic
+ ce_pix       : inout std_logic;
 -- audio_select : in std_logic_vector(2 downto 0);
--- audio        : out std_logic_vector(11 downto 0)
+ audio        : out std_logic_vector(11 downto 0)
 );
 end naughty_boy;
 
@@ -107,9 +107,13 @@ architecture struct of naughty_boy is
  signal player2      : std_logic := '0';
  signal pl2_cocktail : std_logic := '0';
  signal bkgnd_offset : std_logic_vector(7 downto 0) := (others =>'0');
--- signal sound_a      : std_logic_vector(7 downto 0) := (others =>'0');
--- signal sound_b      : std_logic_vector(7 downto 0) := (others =>'0');
+ signal sound_a      : std_logic_vector(7 downto 0) := (others =>'0');
+ signal sound_b      : std_logic_vector(7 downto 0) := (others =>'0');
  
+ signal tms3615_notes : std_logic_vector(11 downto 0) := (others =>'0');
+ signal tms3615_clk   : std_logic := '0';
+ signal tms3615_octave: std_logic_vector(1 downto 0) := (others =>'0');
+
 -- signal clk10 : std_logic;
 -- signal snd1  : std_logic_vector( 7 downto 0) := (others =>'0');
 -- signal snd2  : std_logic_vector( 1 downto 0) := (others =>'0');
@@ -233,8 +237,33 @@ begin
 				when "10010" => 	player2 <= cpu_do(0);
 										color_set <= cpu_do(2 downto 1);
 				when "10011" => 	bkgnd_offset <= cpu_do;
---    when "11000" => sound_b      <= cpu_do;
---    when "11010" => sound_a      <= cpu_do;
+				when "10100" =>	sound_a      <= cpu_do;
+				when "10101" =>	sound_b      <= cpu_do;
+										
+					case cpu_do(3 downto 0) is
+						when x"0" => tms3615_notes <= x"001";
+						when x"1" => tms3615_notes <= x"002";
+						when x"2" => tms3615_notes <= x"004";
+						when x"3" => tms3615_notes <= x"008";
+						when x"4" => tms3615_notes <= x"010";
+						when x"5" => tms3615_notes <= x"020";
+						when x"6" => tms3615_notes <= x"040";
+						when x"7" => tms3615_notes <= x"080";
+						when x"8" => tms3615_notes <= x"100";
+						when x"9" => tms3615_notes <= x"200";
+						when x"A" => tms3615_notes <= x"400";
+						when x"B" => tms3615_notes <= x"800";
+						when x"F" => tms3615_notes <= x"000";
+						when others => null;
+					end case;
+					
+					case cpu_do(7 downto 6) is
+						when "00" => tms3615_octave <= "00";
+						when "01" => tms3615_octave <= "01";
+						when "10" => tms3615_octave <= "10";
+						when others => null; -- keep previous octave when "11"
+					end case;
+										
 				when others => null;
 			end case;
 		end if; 
@@ -499,6 +528,21 @@ port map(
 ----snd      => snd3
 ----);
 --
+
+-- tms3615
+tms3615_clk <= '0'     when tms3615_octave = "11" -- could not happen
+			else  hcnt(1) when tms3615_octave = "10" 
+			else  hcnt(2) when tms3615_octave = "01"
+			else  hcnt(3) when tms3615_octave = "00";
+
+tms3615ns : entity work.tms3615
+port map(
+	clk_sys => hcnt(0),
+	clk_snd => tms3615_clk,
+	trigger => '0'&tms3615_notes,
+	audio   => audio
+);
+
 ---- melody
 ----music : entity work.phoenix_music
 ----port map(
