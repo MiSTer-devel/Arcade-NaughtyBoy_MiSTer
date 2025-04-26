@@ -34,7 +34,6 @@ port(
  video_hblank : out std_logic;
  video_vblank : out std_logic; 
  ce_pix       : inout std_logic;
--- audio_select : in std_logic_vector(2 downto 0);
  audio        : out std_logic_vector(11 downto 0)
 );
 end naughty_boy;
@@ -109,18 +108,20 @@ architecture struct of naughty_boy is
  signal bkgnd_offset : std_logic_vector(7 downto 0) := (others =>'0');
  signal sound_a      : std_logic_vector(7 downto 0) := (others =>'0');
  signal sound_b      : std_logic_vector(7 downto 0) := (others =>'0');
+ signal sound_c      : std_logic_vector(1 downto 0) := (others =>'0');
  
  signal tms3615_notes : std_logic_vector(11 downto 0) := (others =>'0');
  signal tms3615_clk   : std_logic := '0';
  signal tms3615_octave: std_logic_vector(1 downto 0) := (others =>'0');
 
--- signal clk10 : std_logic;
--- signal snd1  : std_logic_vector( 7 downto 0) := (others =>'0');
--- signal snd2  : std_logic_vector( 1 downto 0) := (others =>'0');
--- signal snd3  : std_logic_vector( 7 downto 0) := (others =>'0');
--- signal song  : std_logic_vector( 7 downto 0) := (others =>'0');
--- signal mixed : std_logic_vector(11 downto 0) := (others =>'0');
--- signal sound_string : std_logic_vector(31 downto 0);
+ signal melody  : std_logic_vector(11 downto 0) := (others =>'0');
+ signal snd1    : std_logic_vector( 1 downto 0) := (others =>'0');
+ signal snd2    : std_logic                     := '0';
+ signal noise   : std_logic                     := '0';
+ signal snd_C5  : std_logic_vector( 7 downto 0) := (others =>'0');
+ signal snd_A5  : std_logic_vector( 7 downto 0) := (others =>'0');
+ signal snd_A6  : std_logic_vector( 7 downto 0) := (others =>'0');
+ signal snd_A7  : std_logic_vector( 7 downto 0) := (others =>'0');
  
  signal coin_n   : std_logic;
  signal buttons  : std_logic_vector(4 downto 0);
@@ -129,20 +130,6 @@ architecture struct of naughty_boy is
 
  
 begin
-
----- make 10MHz clock from 50MHz
---process (clock_50)
--- variable cnt : std_logic_vector(3 downto 0) := (others => '0');
---begin
--- if rising_edge(clock_50) then
---  cnt := std_logic_vector(unsigned(cnt) + 1);
---  clk10 <= '0';
---  if cnt = X"5" then
---   cnt := (others => '0');
---   clk10 <= '1';
---  end if;   
--- end if;
---end process;
 
 -- video address/sync generator
 video_gen : entity work.naughty_boy_video
@@ -236,6 +223,7 @@ begin
 			case cpu_adr(15 downto 11) is
 				when "10010" => 	player2 <= cpu_do(0);
 										color_set <= cpu_do(2 downto 1);
+										sound_c   <= cpu_do(5 downto 4);
 				when "10011" => 	bkgnd_offset <= cpu_do;
 				when "10100" =>	sound_a      <= cpu_do;
 				when "10101" =>	sound_b      <= cpu_do;
@@ -494,40 +482,50 @@ port map(
 );
 --
 ---- sound effect1
-----effect1 : entity work.phoenix_effect1
-----port map(
-----clk50    => clock_50,
-----clk10    => clk10,
-----reset    => '0',
-----trigger  => sound_a(4),
-----filter   => sound_a(5),
-----divider  => sound_a(3 downto 0),
-----snd      => snd1
-----);
---
+effect1 : entity work.naughty_boy_effect1
+port map(
+clk12       => clock_12,
+trigger_B54 => sound_b(5 downto 4),
+snd         => snd1
+);
+
 ---- sound effect2
-----effect2 : entity work.phoenix_effect2
-----port map(
-----clk50    => clock_50,
-----clk10    => clk10,
-----reset    => '0',
-----trigger1 => sound_b(4),
-----trigger2 => sound_b(5),
-----divider  => sound_b(3 downto 0),
-----snd      => snd2
-----);
---
----- sound effect3
-----effect3 : entity work.phoenix_effect3
-----port map(
-----clk50    => clock_50,
-----clk10    => clk10,
-----reset    => '0',
-----trigger1 => sound_b(6),
-----trigger2 => sound_b(7),
-----snd      => snd3
-----);
---
+effect2 : entity work.naughty_boy_effect2
+port map(
+clk12   => clock_12,
+clksnd  => vcnt(0),
+divider => sound_a(3 downto 0),
+snd     => snd2
+);
+
+noise_gen : entity work.naughty_boy_noise
+port map(
+ clk12    => clock_12,
+ trigger  => sound_a(4),
+ noise    => noise
+);
+
+effect3 : entity work.naughty_boy_effect3
+port map(
+ clk12      => clock_12,
+ trigger_C4 => sound_c(0),
+ trigger_C5 => sound_c(1),
+ trigger_A5 => sound_a(5),
+ noise      => noise,
+ snd_C5     => snd_C5,
+ snd_A5     => snd_A5
+);
+
+effect4 : entity work.naughty_boy_effect4
+port map(
+ clk12      => clock_12,
+ trigger_A6 => sound_a(6),
+ trigger_A7 => sound_a(7),
+ noise      => noise,
+ snd_A6     => snd_A6,
+ snd_A7     => snd_A7
+);
+
 
 -- tms3615
 tms3615_clk <= '0'     when tms3615_octave = "11" -- could not happen
@@ -540,33 +538,25 @@ port map(
 	clk_sys => hcnt(0),
 	clk_snd => tms3615_clk,
 	trigger => '0'&tms3615_notes,
-	audio   => audio
+	audio   => melody
 );
 
----- melody
-----music : entity work.phoenix_music
-----port map(
-----clk10    => clk10,
-----reset    => '0',
-----trigger  => sound_a(7),
-----sel_song => sound_a(6),
-----snd      => song
-----);
---
+--audio <= melody;
+--audio <= "000000" & snd1 & "0000";  -- alerte monsters
+--audio <= "00000" & snd2 & "000000"; -- rock hit monsters, misc jingles, ...
+--audio <= "00" & snd_A5 & "00";      -- rock hit monsters 
+--audio <= "0000000" & snd_C5(7 downto 3) ;  -- rock is flying
+--audio <= "0000" & snd_A6 ; -- rock hit floor, castle fire 
+--audio <= "000000" & snd_A7(7 downto 2) ; -- trop fort -- boy step, castle fire 
+
 ---- mix effects and music
-----mixed <= std_logic_vector(
-----      unsigned("00"  & snd1 & "00") +
-----      unsigned("0"   & snd2 & "000000000")+
-----      unsigned("00"  & snd3 & "00")+
-----      unsigned("00"  & song & "00" ));
---
----- select sound or/and effect
-----with audio_select select
-----audio <= "00"   & snd1  & "00"        when "100",
-----         "0"    & snd2  & "000000000" when "101",
-----         "00"   & snd3  & "00"        when "110",
-----         "00"  &  song  & "00"        when "111",
-----                  mixed               when others;
---
+audio <= 
+	melody
+	+ ("000000"  & snd1 & "0000")
+	+ ("00000"   & snd2 & "000000")
+	+ ("00"      & snd_A5 & "00")
+	+ ("0000000" & snd_C5(7 downto 3))
+	+ ("0000"    & snd_A6)
+	+ ("000000"  & snd_A7(7 downto 2));
 
 end struct;
