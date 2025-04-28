@@ -151,7 +151,7 @@ port map(
 -- misc
 clock_12n<= not clock_12;
 reset_n  <= not reset;
-rdy      <= not cpu_wait;
+rdy      <= not cpu_wait when (cpu_adr(15 downto 12) = "1000") else '1';
 ce_pix   <= ena_pix;
 
 
