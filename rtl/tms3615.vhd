@@ -83,7 +83,7 @@ begin
 				decays(kv) <= decays(kv) + 1;
 				if decays(kv) = x"4000" then
 					decays(kv) <= (others => '0');
-					amps(kv) <= amps(kv) - 1;  -- rough linear decay
+					amps(kv) <= amps(kv) - (amps(kv) srl 3);  -- Exponential decay: A = A - (A >> 3)
 				end if;
 			end if;
 		end if;
