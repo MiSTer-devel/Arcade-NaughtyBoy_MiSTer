@@ -30,7 +30,7 @@
 	<switches></switches>
 
 	<rom index="1"></rom>
-	<rom index="0" md5="" zip="popflamn.zip">
+	<rom index="0" md5="" zip="popflame.zip|popflamn.zip">
 		<part crc="88cd3faa" name="pfb2-1.bin"></part>
 		<part crc="a09892e8" name="pfb2-2.bin"></part>
 		<part crc="99fca5ed" name="pfb2-3.bin"></part>
