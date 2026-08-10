@@ -150,7 +150,7 @@ if rising_edge(clk12) then
 			u_c4 <= u_c4 + (65535 - u_c4)/256;
 		end if;
 	else
-		if cnt > 4688 then
+		if cnt > 155 then
 			cnt := (others => '0');
 			u_c4 <= u_c4 - (u_c4 - 0)/256; 
 		end if; 
